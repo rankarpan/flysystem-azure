@@ -1,11 +1,14 @@
 <?php
 
-namespace League\Flysystem\Azure;
+namespace Laravel\Flysystem\Azure;
+
+use Carbon\Carbon;
 
 use League\Flysystem\Adapter\AbstractAdapter;
 use League\Flysystem\Adapter\Polyfill\NotSupportingVisibilityTrait;
 use League\Flysystem\Config;
 use League\Flysystem\Util;
+
 use MicrosoftAzure\Storage\Blob\Internal\IBlob;
 use MicrosoftAzure\Storage\Blob\Models\BlobPrefix;
 use MicrosoftAzure\Storage\Blob\Models\BlobProperties;
@@ -22,7 +25,7 @@ class AzureAdapter extends AbstractAdapter
     /**
      * @var string
      */
-    protected $container;
+    protected $config;
 
     /**
      * @var IBlob
@@ -45,13 +48,12 @@ class AzureAdapter extends AbstractAdapter
      *
      * @param IBlob  $azureClient
      * @param string $container
-     * @param string $prefix
      */
-    public function __construct(IBlob $azureClient, $container, $prefix = null)
+    public function __construct(IBlob $azureClient, $config, $prefix = null)
     {
         $this->client = $azureClient;
-        $this->container = $container;
         $this->setPathPrefix($prefix);
+        $this->config = $config;
     }
 
     /**
@@ -101,7 +103,7 @@ class AzureAdapter extends AbstractAdapter
         $path = $this->applyPathPrefix($path);
         $newpath = $this->applyPathPrefix($newpath);
 
-        $this->client->copyBlob($this->container, $newpath, $this->container, $path);
+        $this->client->copyBlob($this->config['container'], $newpath, $this->config['container'], $path);
 
         return true;
     }
@@ -113,7 +115,7 @@ class AzureAdapter extends AbstractAdapter
     {
         $path = $this->applyPathPrefix($path);
 
-        $this->client->deleteBlob($this->container, $path);
+        $this->client->deleteBlob($this->config['container'], $path);
 
         return true;
     }
@@ -129,11 +131,11 @@ class AzureAdapter extends AbstractAdapter
         $options->setPrefix($dirname . '/');
 
         /** @var ListBlobsResult $listResults */
-        $listResults = $this->client->listBlobs($this->container, $options);
+        $listResults = $this->client->listBlobs($this->config['container'], $options);
 
         foreach ($listResults->getBlobs() as $blob) {
             /** @var \MicrosoftAzure\Storage\Blob\Models\Blob $blob */
-            $this->client->deleteBlob($this->container, $blob->getName());
+            $this->client->deleteBlob($this->config['container'], $blob->getName());
         }
 
         return true;
@@ -144,7 +146,7 @@ class AzureAdapter extends AbstractAdapter
      */
     public function createDir($dirname, Config $config)
     {
-        $this->write(rtrim($dirname, '/') . '/', ' ', $config);
+        $this->write(rtrim($dirname, '/').'/', ' ', $config);
 
         return ['path' => $dirname, 'type' => 'dir'];
     }
@@ -157,7 +159,7 @@ class AzureAdapter extends AbstractAdapter
         $path = $this->applyPathPrefix($path);
 
         try {
-            $this->client->getBlobMetadata($this->container, $path);
+            $this->client->getBlobMetadata($this->config['container'], $path);
         } catch (ServiceException $e) {
             if ($e->getCode() !== 404) {
                 throw $e;
@@ -177,7 +179,7 @@ class AzureAdapter extends AbstractAdapter
         $path = $this->applyPathPrefix($path);
 
         /** @var \MicrosoftAzure\Storage\Blob\Models\GetBlobResult $blobResult */
-        $blobResult = $this->client->getBlob($this->container, $path);
+        $blobResult = $this->client->getBlob($this->config['container'], $path);
         $properties = $blobResult->getProperties();
         $content = $this->streamContentsToString($blobResult->getContentStream());
 
@@ -192,7 +194,7 @@ class AzureAdapter extends AbstractAdapter
         $path = $this->applyPathPrefix($path);
 
         /** @var \MicrosoftAzure\Storage\Blob\Models\GetBlobResult $blobResult */
-        $blobResult = $this->client->getBlob($this->container, $path);
+        $blobResult = $this->client->getBlob($this->config['container'], $path);
         $properties = $blobResult->getProperties();
 
         return $this->normalizeBlobProperties($path, $properties) + ['stream' => $blobResult->getContentStream()];
@@ -214,12 +216,12 @@ class AzureAdapter extends AbstractAdapter
         $options = new ListBlobsOptions();
         $options->setPrefix($directory);
 
-        if ( ! $recursive) {
+        if (!$recursive) {
             $options->setDelimiter('/');
         }
 
         /** @var ListBlobsResult $listResults */
-        $listResults = $this->client->listBlobs($this->container, $options);
+        $listResults = $this->client->listBlobs($this->config['container'], $options);
 
         $contents = [];
 
@@ -227,11 +229,8 @@ class AzureAdapter extends AbstractAdapter
             $contents[] = $this->normalizeBlobProperties($blob->getName(), $blob->getProperties());
         }
 
-        if ( ! $recursive) {
-            $contents = array_merge(
-                $contents,
-                array_map([$this, 'normalizeBlobPrefix'], $listResults->getBlobPrefixes())
-            );
+        if (!$recursive) {
+            $contents = array_merge($contents, array_map([$this, 'normalizeBlobPrefix'], $listResults->getBlobPrefixes()));
         }
 
         return Util::emulateDirectories($contents);
@@ -245,7 +244,7 @@ class AzureAdapter extends AbstractAdapter
         $path = $this->applyPathPrefix($path);
 
         /** @var \MicrosoftAzure\Storage\Blob\Models\GetBlobPropertiesResult $result */
-        $result = $this->client->getBlobProperties($this->container, $path);
+        $result = $this->client->getBlobProperties($this->config['container'], $path);
 
         return $this->normalizeBlobProperties($path, $result->getProperties());
     }
@@ -352,9 +351,9 @@ class AzureAdapter extends AbstractAdapter
     /**
      * Upload a file.
      *
-     * @param string          $path     Path
-     * @param string|resource $contents Either a string or a stream.
-     * @param Config          $config   Config
+     * @param string           $path     Path
+     * @param string|resource  $contents Either a string or a stream.
+     * @param Config           $config   Config
      *
      * @return array
      */
@@ -363,12 +362,7 @@ class AzureAdapter extends AbstractAdapter
         $path = $this->applyPathPrefix($path);
 
         /** @var CopyBlobResult $result */
-        $result = $this->client->createBlockBlob(
-            $this->container,
-            $path,
-            $contents,
-            $this->getOptionsFromConfig($config)
-        );
+        $result = $this->client->createBlockBlob($this->config['container'], $path, $contents, $this->getOptionsFromConfig($config));
 
         return $this->normalize($path, $result->getLastModified()->format('U'), $contents);
     }
@@ -385,7 +379,7 @@ class AzureAdapter extends AbstractAdapter
         $options = new CreateBlobOptions();
 
         foreach (static::$metaOptions as $option) {
-            if ( ! $config->has($option)) {
+            if (!$config->has($option)) {
                 continue;
             }
 
@@ -397,5 +391,76 @@ class AzureAdapter extends AbstractAdapter
         }
 
         return $options;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getUrl($path)
+    {
+        /* Create the signed blob URL */
+        return 'https://'.$this->config['name'].'.blob.core.windows.net/'. $this->config['container'] .'/'. $blob . '?'. implode('&', $_parts);
+
+        return url($this->config['container'] . '/' . $this->applyPathPrefix($path));
+    }
+
+    /**
+     * Retrive Signed Url of Private File
+     *
+     * @param string $path
+     * @param string|NULL $expiry
+     * @param string $resourceType
+     * @param string $permissions
+     *
+     */
+    public function getSignedUrl($path, $expiry = NULL, $resourceType = 'b', $permissions = 'r')
+    {
+        $path = $this->applyPathPrefix($path);
+
+        if ($expiry) {
+            return $this->getBlobUrl($path, $resourceType, $permissions, $expiry);
+        } else {
+            return $this->client->getUri() . $this->config['container'] .'/'. $path;
+        }
+    }
+
+    private function getSASForBlob($blob, $resourceType, $permissions, $expiry)
+    {
+        $key = $this->config['key'];
+        if (is_null($key)) {
+            throw new ServiceException("Please Set Storage Key in FileSystems.");
+        }
+
+        /* Create the signature */
+        $_arraysign = array();
+        $_arraysign[] = $permissions;
+        $_arraysign[] = '';
+        $_arraysign[] = $expiry;
+        $_arraysign[] = '/'. $this->config['name'] .'/'. $this->config['container'] .'/'. $blob;
+        $_arraysign[] = '';
+        $_arraysign[] = "2014-02-14"; //the API version is now required
+        $_arraysign[] = '';
+        $_arraysign[] = '';
+        $_arraysign[] = '';
+        $_arraysign[] = '';
+        $_arraysign[] = '';
+
+        $_str2sign = implode("\n", $_arraysign);
+         
+        return base64_encode(hash_hmac('sha256', urldecode(utf8_encode($_str2sign)), base64_decode($key), true));
+    }
+
+    public function getBlobUrl($blob, $resourceType, $permissions, $expiry)
+    {
+        /* Create the signed query part */
+        $_parts = array();
+        $_parts[] = (!empty($expiry))?'se=' . urlencode($expiry):'';
+        $_parts[] = 'sr=' . $resourceType;
+        $_parts[] = (!empty($permissions))?'sp=' . $permissions:'';
+        $_parts[] = 'sig=' . urlencode($this->getSASForBlob($blob, $resourceType, $permissions, $expiry));
+        $_parts[] = 'sv=2014-02-14';
+
+        /* Create the signed blob URL */
+        return $this->client->getUri() . $this->config['container'] .'/'. $blob .'?'. implode('&', $_parts);
     }
 }
