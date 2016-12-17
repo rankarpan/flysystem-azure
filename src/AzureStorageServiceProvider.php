@@ -7,7 +7,7 @@ use League\Flysystem\Filesystem;
 use Illuminate\Support\ServiceProvider;
 use League\Flysystem\Azure\AzureAdapter;
 use MicrosoftAzure\Storage\Common\ServicesBuilder;
-use App\Iconscout\Azure\AzureSignedUrl;
+use League\Flysystem\Azure\AzureSignedUrl;
 
 class AzureStorageServiceProvider extends ServiceProvider
 {
