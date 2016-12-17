@@ -1,8 +1,6 @@
 <?php
 
-namespace Laravel\Flysystem\Azure;
-
-use Carbon\Carbon;
+namespace League\Flysystem\Azure;
 
 use League\Flysystem\Adapter\AbstractAdapter;
 use League\Flysystem\Adapter\Polyfill\NotSupportingVisibilityTrait;

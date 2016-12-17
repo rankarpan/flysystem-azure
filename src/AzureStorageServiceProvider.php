@@ -1,6 +1,6 @@
 <?php
 
-namespace Laravel\Flysystem\Azure;
+namespace League\Flysystem\Azure;
 
 use Storage;
 use League\Flysystem\Filesystem;

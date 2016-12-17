@@ -1,6 +1,6 @@
 <?php
 
-namespace Laravel\Flysystem\Azure;
+namespace League\Flysystem\Azure;
 
 /**
  * @deprecated deprecated since version 1.0.1
