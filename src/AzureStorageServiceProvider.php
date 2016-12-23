@@ -8,6 +8,7 @@ use Illuminate\Support\ServiceProvider;
 use League\Flysystem\Azure\AzureAdapter;
 use MicrosoftAzure\Storage\Common\ServicesBuilder;
 use League\Flysystem\Azure\AzureSignedUrl;
+use League\Flysystem\Azure\AzurePutFile;
 
 class AzureStorageServiceProvider extends ServiceProvider
 {
@@ -19,14 +20,24 @@ class AzureStorageServiceProvider extends ServiceProvider
     public function boot()
     {
         Storage::extend('azure', function($app, $config) {
-            $endpoint = sprintf(
-                'DefaultEndpointsProtocol=https;AccountName=%s;AccountKey=%s',
-                $config['name'],
-                $config['key']
-            );
+            
+            if ($config['emulator'] === false) {
+                $endpoint = sprintf('DefaultEndpointsProtocol=%s;AccountName=%s;AccountKey=%s',
+                    $config['protocol'],
+                    $config['name'],
+                    $config['key']);
+            } else {
+                $endpoint = sprintf('UseDevelopmentStorage=true;DevelopmentStorageProxyUri=%s',
+                    $config['proxy_uri']);
+            }
             $blobRestProxy = ServicesBuilder::getInstance()->createBlobService($endpoint);
             $filesystem = new Filesystem(new AzureAdapter($blobRestProxy, $config, null));
-            return $filesystem->addPlugin(new AzureSignedUrl);
+            
+            $filesystem = $filesystem->addPlugin(new AzureSignedUrl);
+            $filesystem = $filesystem->addPlugin(new AzurePutFile);
+            
+            return $filesystem;
+
         });
     }
     /**

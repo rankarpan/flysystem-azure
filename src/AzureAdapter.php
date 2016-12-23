@@ -89,6 +89,15 @@ class AzureAdapter extends AbstractAdapter
     /**
      * {@inheritdoc}
      */
+    public function getPutFile($path, $local_path)
+    {
+        $config = new Config;
+        return $this->upload($path, fopen($local_path, 'r'), $config->set('mimetype', mime_content_type($local_path)));
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function rename($path, $newpath)
     {
         $this->copy($path, $newpath);
@@ -396,10 +405,7 @@ class AzureAdapter extends AbstractAdapter
      */
     public function getUrl($path)
     {
-        /* Create the signed blob URL */
-        return 'https://'.$this->config['name'].'.blob.core.windows.net/'. $this->config['container'] .'/'. $blob . '?'. implode('&', $_parts);
-
-        return url($this->config['container'] . '/' . $this->applyPathPrefix($path));
+        return $this->client->getUri() . $this->config['container'] . '/' . $this->applyPathPrefix($path);
     }
 
     /**
