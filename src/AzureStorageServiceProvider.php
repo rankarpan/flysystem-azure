@@ -9,6 +9,7 @@ use League\Flysystem\Azure\AzureAdapter;
 use MicrosoftAzure\Storage\Common\ServicesBuilder;
 use League\Flysystem\Azure\AzureSignedUrl;
 use League\Flysystem\Azure\AzurePutFile;
+use League\Flysystem\Azure\AzureRemoteCopy;
 
 class AzureStorageServiceProvider extends ServiceProvider
 {
@@ -32,12 +33,7 @@ class AzureStorageServiceProvider extends ServiceProvider
             }
             $blobRestProxy = ServicesBuilder::getInstance()->createBlobService($endpoint);
             $filesystem = new Filesystem(new AzureAdapter($blobRestProxy, $config, null));
-            
-            $filesystem = $filesystem->addPlugin(new AzureSignedUrl);
-            $filesystem = $filesystem->addPlugin(new AzurePutFile);
-            
-            return $filesystem;
-
+            return $filesystem->addPlugin(new AzureSignedUrl)->addPlugin(new AzurePutFile)->addPlugin(new AzureRemoteCopy);
         });
     }
     /**

@@ -2,6 +2,8 @@
 
 namespace League\Flysystem\Azure;
 
+use Carbon\Carbon;
+
 use League\Flysystem\Adapter\AbstractAdapter;
 use League\Flysystem\Adapter\Polyfill\NotSupportingVisibilityTrait;
 use League\Flysystem\Config;
@@ -406,6 +408,14 @@ class AzureAdapter extends AbstractAdapter
     public function getUrl($path)
     {
         return $this->client->getUri() . $this->config['container'] . '/' . $this->applyPathPrefix($path);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getRemoteCopy($remote_path, $local_path)
+    {
+        return copy($this->getSignedUrl($remote_path, str_replace('+0000', 'Z', Carbon::now()->addHour()->toIso8601String())), $local_path);
     }
 
     /**
