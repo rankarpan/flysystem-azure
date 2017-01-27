@@ -33,6 +33,11 @@ class AzureAdapter extends AbstractAdapter
     protected $client;
 
     /**
+     * @var API Version
+     */
+    protected $version = '2015-04-05';
+
+    /**
      * @var string[]
      */
     protected static $metaOptions = [
@@ -427,18 +432,18 @@ class AzureAdapter extends AbstractAdapter
      * @param string $permissions
      *
      */
-    public function getSignedUrl($path, $expiry = NULL, $resourceType = 'b', $permissions = 'r')
+    public function getSignedUrl($path, $expiry = NULL, $signedIP = NULL, $resourceType = 'b', $permissions = 'r')
     {
         $path = $this->applyPathPrefix($path);
 
         if ($expiry) {
-            return $this->getBlobUrl($path, $resourceType, $permissions, $expiry);
+            return $this->getBlobUrl($path, $resourceType, $permissions, $expiry, $signedIP);
         } else {
             return $this->client->getUri() . $this->config['container'] .'/'. $path;
         }
     }
 
-    private function getSASForBlob($blob, $resourceType, $permissions, $expiry)
+    private function getSASForBlob($blob, $resourceType, $permissions, $expiry, $signedIP)
     {
         $key = $this->config['key'];
         if (is_null($key)) {
@@ -450,9 +455,11 @@ class AzureAdapter extends AbstractAdapter
         $_arraysign[] = $permissions;
         $_arraysign[] = '';
         $_arraysign[] = $expiry;
-        $_arraysign[] = '/'. $this->config['name'] .'/'. $this->config['container'] .'/'. $blob;
+        $_arraysign[] = '/blob/'. $this->config['name'] .'/'. $this->config['container'] .'/'. $blob;
         $_arraysign[] = '';
-        $_arraysign[] = "2014-02-14"; //the API version is now required
+        $_arraysign[] = $this->signedIP($signedIP);
+        $_arraysign[] = '';
+        $_arraysign[] = $this->version; //the API version is now required
         $_arraysign[] = '';
         $_arraysign[] = '';
         $_arraysign[] = '';
@@ -460,21 +467,37 @@ class AzureAdapter extends AbstractAdapter
         $_arraysign[] = '';
 
         $_str2sign = implode("\n", $_arraysign);
+
+        // dd($_str2sign);
          
         return base64_encode(hash_hmac('sha256', urldecode(utf8_encode($_str2sign)), base64_decode($key), true));
     }
 
-    public function getBlobUrl($blob, $resourceType, $permissions, $expiry)
+    public function getBlobUrl($blob, $resourceType, $permissions, $expiry, $signedIP)
     {
         /* Create the signed query part */
         $_parts = array();
-        $_parts[] = (!empty($expiry))?'se=' . urlencode($expiry):'';
+        $_parts[] = (!empty($expiry)) ? 'se=' . urlencode($expiry) : '';
         $_parts[] = 'sr=' . $resourceType;
-        $_parts[] = (!empty($permissions))?'sp=' . $permissions:'';
-        $_parts[] = 'sig=' . urlencode($this->getSASForBlob($blob, $resourceType, $permissions, $expiry));
-        $_parts[] = 'sv=2014-02-14';
+        $_parts[] = (!empty($permissions)) ? 'sp=' . $permissions : '';
+        $_parts[] = (!empty($this->signedIP($signedIP))) ? 'sip=' . $this->signedIP($signedIP) : '';
+        // $_parts[] = 'spr=' . 'https';
+        $_parts[] = 'sig=' . urlencode($this->getSASForBlob($blob, $resourceType, $permissions, $expiry, $signedIP));
+        $_parts[] = 'sv=' . $this->version;
 
         /* Create the signed blob URL */
         return $this->client->getUri() . $this->config['container'] .'/'. $blob .'?'. implode('&', $_parts);
+    }
+
+    public function signedIP($signedIP)
+    {
+        if (is_null($signedIP)) {
+            $signedIP = request()->ip();
+
+            if (preg_match('/(^127\.)|(^10\.)|(^172\.1[6-9]\.)|(^172\.2[0-9]\.)|(^172\.3[0-1]\.)|(^192\.168\.)/', $signedIP)) {
+                return '';
+            }
+        }
+        return $signedIP;
     }
 }
