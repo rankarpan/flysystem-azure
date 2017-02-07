@@ -33,7 +33,7 @@ class AzureStorageServiceProvider extends ServiceProvider
             }
             $blobRestProxy = ServicesBuilder::getInstance()->createBlobService($endpoint);
             $filesystem = new Filesystem(new AzureAdapter($blobRestProxy, $config, null));
-            return $filesystem->addPlugin(new AzureSignedUrl)->addPlugin(new AzurePutFile)->addPlugin(new AzureRemoteCopy);
+            return $filesystem->addPlugin(new AzureSignedUrl)->addPlugin(new AzurePutFile)->addPlugin(new AzureRemoteCopy)->addPlugin(new AzurePutBlobFile);
         });
     }
     /**

@@ -105,6 +105,14 @@ class AzureAdapter extends AbstractAdapter
     /**
      * {@inheritdoc}
      */
+    public function getPutBlobFile($path, $local_path)
+    {
+        return $this->getPutFile($path, $local_path);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function rename($path, $newpath)
     {
         $this->copy($path, $newpath);
