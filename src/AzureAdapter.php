@@ -428,7 +428,7 @@ class AzureAdapter extends AbstractAdapter
      */
     public function getRemoteCopy($remote_path, $local_path)
     {
-        return copy($this->getSignedUrl($remote_path, str_replace('+0000', 'Z', Carbon::now()->addHour()->toIso8601String())), $local_path);
+        return copy($this->getSignedUrl($remote_path, str_replace('+00:00', 'Z', Carbon::now()->addHour()->toIso8601String())), $local_path);
     }
 
     /**
