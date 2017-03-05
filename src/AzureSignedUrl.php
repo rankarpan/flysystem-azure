@@ -19,8 +19,8 @@ class AzureSignedUrl implements PluginInterface
         return 'signedUrl';
     }
 
-    public function handle($path, $expiry = NULL)
+    public function handle($path, $expiry = NULL, $signedIP = NULL)
     {
-        return $this->filesystem->getAdapter()->getSignedUrl($path, $expiry);
+        return $this->filesystem->getAdapter()->getSignedUrl($path, $expiry, $signedIP);
     }
 }
