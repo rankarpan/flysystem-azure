@@ -418,9 +418,23 @@ class AzureAdapter extends AbstractAdapter
     /**
      * {@inheritdoc}
      */
+    public function getDomainUrl()
+    {
+        if (isset($this->config['domain'])) {
+            $domain_url = $this->config['domain'][array_rand($this->config['domain'])];
+        } else {
+            $domain_url = $this->client->getUri();
+        }
+
+        return rtrim($domain_url, '/\\');
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function getUrl($path)
     {
-        return $this->client->getUri() . $this->config['container'] . '/' . $this->applyPathPrefix($path);
+        return $this->getDomainUrl() .'/'. $this->config['container'] . '/' . $this->applyPathPrefix($path);
     }
 
     /**
@@ -447,7 +461,7 @@ class AzureAdapter extends AbstractAdapter
         if ($expiry) {
             return $this->getBlobUrl($path, $resourceType, $permissions, $expiry, $signedIP);
         } else {
-            return $this->client->getUri() . $this->config['container'] .'/'. $path;
+            return $this->getDomainUrl() .'/'. $this->config['container'] .'/'. $path;
         }
     }
 
@@ -494,7 +508,7 @@ class AzureAdapter extends AbstractAdapter
         $_parts[] = 'sv=' . $this->version;
 
         /* Create the signed blob URL */
-        return $this->client->getUri() . $this->config['container'] .'/'. $blob .'?'. implode('&', $_parts);
+        return $this->getDomainUrl() .'/'. $this->config['container'] .'/'. $blob .'?'. implode('&', $_parts);
     }
 
     public function signedIP($signedIP)
