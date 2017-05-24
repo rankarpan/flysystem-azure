@@ -96,18 +96,17 @@ class AzureAdapter extends AbstractAdapter
     /**
      * {@inheritdoc}
      */
-    public function getPutFile($path, $local_path)
+    public function getPutFile($path, $local_path, Config $config)
     {
-        $config = new Config;
         return $this->upload($path, fopen($local_path, 'r'), $config->set('mimetype', mime_content_type($local_path)));
     }
 
     /**
      * {@inheritdoc}
      */
-    public function getPutBlobFile($path, $local_path)
+    public function getPutBlobFile($path, $local_path, Config $config)
     {
-        return $this->getPutFile($path, $local_path);
+        return $this->getPutFile($path, $local_path, $config);
     }
 
     /**
@@ -398,14 +397,18 @@ class AzureAdapter extends AbstractAdapter
      */
     protected function getOptionsFromConfig(Config $config)
     {
+
         $options = new CreateBlobOptions();
 
         foreach (static::$metaOptions as $option) {
-            if (!$config->has($option)) {
-                continue;
+            if ($config->has($option)) {
+                call_user_func([$options, "set$option"], $config->get($option));
             }
 
-            call_user_func([$options, "set$option"], $config->get($option));
+            if (isset($this->config['options'][$option])) {
+                call_user_func([$options, "set$option"], $this->config['options'][$option]);
+            }
+
         }
 
         if ($mimetype = $config->get('mimetype')) {

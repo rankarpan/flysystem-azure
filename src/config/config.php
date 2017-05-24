@@ -63,6 +63,9 @@ return [
             'emulator'  => false,
             'proxy_uri' => 'http://192.168.10.1',
             'domain'    => [ env('STORAGE_DOMAIN') ],
+            'options'   => [ 
+                'CacheControl' => 'public, max-age=31536000'
+            ],
         ],
 
     ],

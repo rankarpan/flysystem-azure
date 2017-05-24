@@ -2,6 +2,7 @@
 
 namespace League\Flysystem\Azure;
 
+use League\Flysystem\Config;
 use League\Flysystem\FilesystemInterface;
 use League\Flysystem\PluginInterface;
 
@@ -19,8 +20,12 @@ class AzurePutFile implements PluginInterface
         return 'putFile';
     }
 
-    public function handle($path, $local_path)
+    public function handle($path, $local_path, $config = null)
     {
-        return $this->filesystem->getAdapter()->getPutFile($path, $local_path);
+        if (is_null($config)) {
+            $config = new Config;
+        }
+        
+        return $this->filesystem->getAdapter()->getPutFile($path, $local_path, $config);
     }
 }
