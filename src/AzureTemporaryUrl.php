@@ -19,8 +19,8 @@ class AzureTemporaryUrl implements PluginInterface
         return 'temporaryUrl';
     }
 
-    public function handle($path, $expiry = NULL, $signedIP = NULL, $resourceType = 'b', $permissions = 'r')
+    public function handle($path, $expiration, array $options = [])
     {
-        return $this->filesystem->getAdapter()->getTemporaryUrl($path, $expiry, $signedIP, $resourceType, $permissions);
+        return $this->filesystem->getAdapter()->getTemporaryUrl($path, $expiration, $options);
     }
 }
