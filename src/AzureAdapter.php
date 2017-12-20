@@ -477,7 +477,7 @@ class AzureAdapter extends AbstractAdapter
      * @param string $permissions
      *
      */
-    public function getTemporaryUrl($path, $expiry = NULL, $signedIP = NULL, $resourceType = 'b', $permissions = 'r')
+    public function getTemporaryUrl($path, $expiry = NULL, $signedIP = '127.0.0.1', $resourceType = 'b', $permissions = 'r')
     {
         return $this->getSignedUrl($path, $expiry, $signedIP, $resourceType, $permissions);
     }
