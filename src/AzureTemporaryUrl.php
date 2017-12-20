@@ -5,7 +5,7 @@ namespace League\Flysystem\Azure;
 use League\Flysystem\FilesystemInterface;
 use League\Flysystem\PluginInterface;
 
-class AzureSignedUrl implements PluginInterface
+class AzureTemporaryUrl implements PluginInterface
 {
     protected $filesystem;
 
@@ -16,11 +16,11 @@ class AzureSignedUrl implements PluginInterface
 
     public function getMethod()
     {
-        return 'signedUrl';
+        return 'temporaryUrl';
     }
 
     public function handle($path, $expiry = NULL, $signedIP = NULL, $resourceType = 'b', $permissions = 'r')
     {
-        return $this->filesystem->getAdapter()->getSignedUrl($path, $expiry, $signedIP, $resourceType, $permissions);
+        return $this->filesystem->getAdapter()->getTemporaryUrl($path, $expiry, $signedIP, $resourceType, $permissions);
     }
 }
