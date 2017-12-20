@@ -479,7 +479,7 @@ class AzureAdapter extends AbstractAdapter
      */
     public function getTemporaryUrl($path, $expiration, array $options = [])
     {
-        return $this->getSignedUrl($path, $expiration, '127.0.0.1');
+        return $this->getSignedUrl($path, str_replace('+00:00', 'Z', $expiration->toIso8601String()), '127.0.0.1');
     }
 
     private function getSASForBlob($blob, $resourceType, $permissions, $expiry, $signedIP)
