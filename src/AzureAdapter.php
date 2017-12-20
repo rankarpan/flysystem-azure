@@ -468,6 +468,20 @@ class AzureAdapter extends AbstractAdapter
         }
     }
 
+    /**
+     * Retrive Temporary Url of Private File
+     *
+     * @param string $path
+     * @param string|NULL $expiry
+     * @param string $resourceType
+     * @param string $permissions
+     *
+     */
+    public function getTemporaryUrl($path, $expiry = NULL, $signedIP = NULL, $resourceType = 'b', $permissions = 'r')
+    {
+        return $this->getSignedUrl($path, $expiry, $signedIP, $resourceType, $permissions);
+    }
+
     private function getSASForBlob($blob, $resourceType, $permissions, $expiry, $signedIP)
     {
         $key = $this->config['key'];
