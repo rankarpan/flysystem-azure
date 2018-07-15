@@ -2,7 +2,7 @@
 
 namespace League\Flysystem\Azure;
 
-use Storage;
+use Illuminate\Support\Facades\Storage;
 use League\Flysystem\Filesystem;
 use Illuminate\Support\ServiceProvider;
 use League\Flysystem\Azure\AzureAdapter;
@@ -22,7 +22,7 @@ class AzureStorageServiceProvider extends ServiceProvider
     public function boot()
     {
         Storage::extend('azure', function($app, $config) {
-            
+
             if ($config['emulator'] === false) {
                 $endpoint = sprintf('DefaultEndpointsProtocol=%s;AccountName=%s;AccountKey=%s',
                     $config['protocol'],
